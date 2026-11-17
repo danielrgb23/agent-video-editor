@@ -247,7 +247,17 @@ def inspecionar(arquivo: Path) -> dict:
         if abs(rotacao) % 180 == 90:
             w, h = h, w
         info |= {'largura': w, 'altura': h, 'fps': video.get('avg_frame_rate')}
+        if video.get('color_transfer') in HDR_TRANSFER:  # HLG ou PQ (celular gravando em HDR)
+            info['hdr'] = video['color_transfer']
     return info
+
+
+# a curva de transferência dos vídeos HDR (HLG e PQ): o editor trabalha em SDR (BT.709), então eles passam por um tonemap
+HDR_TRANSFER = ('arib-std-b67', 'smpte2084')
+# HDR → SDR: linear, primárias BT.709, tonemap Hable (medido no taste-skill: o céu e o pilar sem estourar, a pele sem
+# faixas; o Mobius clareia demais e o Reinhard lava as cores)
+TONEMAP_SDR = ('zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,'
+               'zscale=t=bt709:m=bt709:r=tv,format=yuv420p')
 
 
 def env(nome: str) -> str:

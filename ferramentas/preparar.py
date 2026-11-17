@@ -28,13 +28,14 @@ sys.path.insert(0, str(Path(__file__).parent))
 import enquadramento  # noqa: E402
 import rosto  # noqa: E402
 import voz  # noqa: E402
-from base import CATEGORIA_PADRAO, PROJETOS, env, gravar_json, inspecionar, preparar_biblioteca  # noqa: E402
+from base import CATEGORIA_PADRAO, PROJETOS, TONEMAP_SDR, env, ffmpeg, gravar_json, inspecionar, preparar_biblioteca  # noqa: E402
 from transcricao import extrair_audio, silencios, transcrever  # noqa: E402
 
-ROTULOS = {'enquadramento': 'enquadramento 9:16', 'proxy': 'proxy 720p e rosto', 'audio': 'áudio e silêncios',
+ROTULOS = {'sdr': 'HDR → SDR', 'enquadramento': 'enquadramento 9:16', 'proxy': 'proxy 720p e rosto', 'audio': 'áudio e silêncios',
            'transcricao': 'transcrição', 'voz': 'voz limpa (Leve)', 'nivel': 'nível da voz'}
 # o que se diz quando um passo para (do 18: pipeline.FALHA); o detalhe vai junto, curto e sem caminhos
 FALHA = {
+    'sdr': 'Não consegui converter o vídeo HDR para SDR',
     'enquadramento': 'Não consegui enquadrar o vídeo em 9:16',
     'proxy': 'Não consegui preparar o vídeo para o player (proxy e rosto)',
     'audio': 'Não consegui medir as pausas do áudio',
@@ -182,7 +183,25 @@ def preparar(video: Path, nome: str, pasta: Path, briefing: str | None, categori
         fonte.update(r['fonte'])
         return {'resumo': f'recorte de {r["recorte"]} px, rosto em {r["rostos"]} amostras' + (f' ({r["aviso"]})' if r.get('aviso') else '')}
 
-    def cadeia_video():  # o 9:16 antes do que depende dele (o proxy e o rosto)
+    def sdr():  # HDR (HLG/PQ) → SDR: sem isso, o render lê o HLG como SDR e a imagem sai lavada, estourada e com faixas
+        destino = midia / 'bruto_sdr.mp4'
+        try:
+            ffmpeg('-i', str(bruto), '-map', '0:v:0', '-map', '0:a?', '-vf', TONEMAP_SDR, '-c:v', 'libx264', '-preset', 'medium',
+                   '-crf', '12', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv',
+                   '-c:a', 'copy', '-movflags', '+faststart', str(destino))
+        except RuntimeError as e:
+            if 'zscale' in str(e):
+                raise Recusa('O vídeo é HDR e o ffmpeg do PATH não tem o zscale: use o ffmpeg-full '
+                             '(PATH=/opt/homebrew/opt/ffmpeg-full/bin:$PATH).') from None
+            raise
+        fonte['arquivo'] = str(destino.relative_to(pasta))
+        return {'resumo': f'{info["hdr"]} → BT.709 (tonemap Hable)'}
+
+    def cadeia_video():  # o SDR e o 9:16 antes do que depende deles (o proxy e o rosto)
+        nonlocal bruto
+        if info.get('hdr'):
+            ex.passo('sdr', sdr)
+            bruto = pasta / fonte['arquivo']
         if horizontal:
             ex.passo('enquadramento', enquadrar)
         ex.passo('proxy', proxy_e_rosto, pasta / fonte['arquivo'], pasta)
