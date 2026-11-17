@@ -1616,8 +1616,14 @@ ${b}` };
     const p = POP.curva(limite01(rel / POP.dur));
     return { escala: POP.escala + (1 - POP.escala) * p, opacidade: p };
   };
-  var centrado = (y, rel, x = 0.5) => {
-    const p = pop(rel);
+  var SALTO = { dur: 0.34, escala: 0.55, volta: 1.9 };
+  var salto = (rel) => {
+    const t = limite01(rel / SALTO.dur) - 1;
+    const p = 1 + (SALTO.volta + 1) * t * t * t + SALTO.volta * t * t;
+    return { escala: SALTO.escala + (1 - SALTO.escala) * p, opacidade: limite01(rel / SALTO.dur * 3) };
+  };
+  var centrado = (y, rel, x = 0.5, comSalto = false) => {
+    const p = comSalto ? salto(rel) : pop(rel);
     return { left: `${x * 100}%`, top: `${y * 100}%`, transform: `translate(-50%, -50%) scale(${p.escala})`, opacity: p.opacidade };
   };
   function letteringNoAtor(e, rel) {
@@ -1729,7 +1735,7 @@ ${b}` };
         chave: e.id,
         classe: "absolute overflow-hidden sombra-card",
         // `entrada: 'seco'`: aparece inteiro de uma vez, sem o pop (o som continua)
-        estilo: { ...centrado(m.y, e.entrada === "seco" ? POP.dur : rel, m.x), width: `${m.w * 100}cqw`, height: `${m.h * 100}cqh`, borderRadius: "2.2cqw", background: "#111" },
+        estilo: { ...centrado(m.y, e.entrada === "seco" ? POP.dur : rel, m.x, e.entrada === "pop"), width: `${m.w * 100}cqw`, height: `${m.h * 100}cqh`, borderRadius: "2.2cqw", background: "#111" },
         filhos: [midia({ id: e.id, banco: item.id }, banco, Math.max(rel, 0))]
       };
     const texto = e.texto;
