@@ -1604,7 +1604,8 @@ ${b}` };
     } else h = 0.055;
     const { modo, f } = e.lugar;
     const meio = e.y !== void 0 ? e.y : modo === "metade" ? f : modo === "atras" ? Math.min(f, 0.72) - h / 2 - 0.02 : modo === "ator" ? queixo(e.lugar) + 0.04 + h / 2 : 0.66;
-    return { w, h, y: Math.min(Math.max(meio, h / 2 + 0.03), 0.97 - h / 2) };
+    const x = e.x !== void 0 ? Math.min(Math.max(e.x, w / 2 + 0.02), 0.98 - w / 2) : 0.5;
+    return { w, h, x, y: Math.min(Math.max(meio, h / 2 + 0.03), 0.97 - h / 2) };
   }
   var yBarra = (l) => l.modo === "metade" ? l.f : BARRA.y;
   function digitacao(e) {
@@ -1615,9 +1616,9 @@ ${b}` };
     const p = POP.curva(limite01(rel / POP.dur));
     return { escala: POP.escala + (1 - POP.escala) * p, opacidade: p };
   };
-  var centrado = (y, rel) => {
+  var centrado = (y, rel, x = 0.5) => {
     const p = pop(rel);
-    return { left: "50%", top: `${y * 100}%`, transform: `translate(-50%, -50%) scale(${p.escala})`, opacity: p.opacidade };
+    return { left: `${x * 100}%`, top: `${y * 100}%`, transform: `translate(-50%, -50%) scale(${p.escala})`, opacity: p.opacidade };
   };
   function letteringNoAtor(e, rel) {
     const { tam, texto } = lettering(e.texto ?? "", TAM.grande);
@@ -1728,7 +1729,7 @@ ${b}` };
         chave: e.id,
         classe: "absolute overflow-hidden sombra-card",
         // `entrada: 'seco'`: aparece inteiro de uma vez, sem o pop (o som continua)
-        estilo: { ...centrado(m.y, e.entrada === "seco" ? POP.dur : rel), width: `${m.w * 100}cqw`, height: `${m.h * 100}cqh`, borderRadius: "2.2cqw", background: "#111" },
+        estilo: { ...centrado(m.y, e.entrada === "seco" ? POP.dur : rel, m.x), width: `${m.w * 100}cqw`, height: `${m.h * 100}cqh`, borderRadius: "2.2cqw", background: "#111" },
         filhos: [midia({ id: e.id, banco: item.id }, banco, Math.max(rel, 0))]
       };
     const texto = e.texto;
@@ -1737,7 +1738,7 @@ ${b}` };
       chave: e.id,
       classe: "absolute",
       estilo: {
-        ...centrado(m.y, rel),
+        ...centrado(m.y, rel, m.x),
         padding: "1.2cqh 3.2cqw",
         borderRadius: "1.8cqw",
         background: "rgba(14,14,14,0.62)",
@@ -1921,7 +1922,7 @@ ${b}`, tam, n: 2, sobra };
       return m.length === ls.length ? m.reduce((a, b) => b.f < a.f ? b : a) : lugarEm(ini, fim);
     };
     const originais = new Map((edicao.direcao?.itens ?? []).map((i) => [i.id, i]));
-    const desenhaveis = [...planos.filter((p) => p.tipo === "full_ator_lettering"), ...elementos].sort((a, b) => a.inicio - b.inicio).map((e) => ({ id: e.id, tipo: e.tipo, inicio: e.tipo === "tarja" && e.inicio < 1 ? 0 : e.inicio, fim: e.fim, texto: e.texto, descricao: e.descricao, banco: originais.get(e.id)?.banco ?? null, largura: originais.get(e.id)?.largura, y: originais.get(e.id)?.y, entrada: originais.get(e.id)?.entrada, lugar: e.tipo === "caixinha_perguntas" ? caixinhaEm(e.inicio, e.fim) : lugarEm(e.inicio, e.fim) }));
+    const desenhaveis = [...planos.filter((p) => p.tipo === "full_ator_lettering"), ...elementos].sort((a, b) => a.inicio - b.inicio).map((e) => ({ id: e.id, tipo: e.tipo, inicio: e.tipo === "tarja" && e.inicio < 1 ? 0 : e.inicio, fim: e.fim, texto: e.texto, descricao: e.descricao, banco: originais.get(e.id)?.banco ?? null, largura: originais.get(e.id)?.largura, x: originais.get(e.id)?.x, y: originais.get(e.id)?.y, entrada: originais.get(e.id)?.entrada, lugar: e.tipo === "caixinha_perguntas" ? caixinhaEm(e.inicio, e.fim) : lugarEm(e.inicio, e.fim) }));
     lista2.forEach((x, i) => {
       if (x.tipo === "comentario_insert_ator" || desenhaveis.some((e) => e.inicio < x.t.fim && e.fim > x.t.inicio)) return;
       trechos[i].geometria = geometriaDoInsert(x, banco, receitaDoInsert(x, banco, presets), divisaoDe(x, banco, presets), fundoInserts);

@@ -16,7 +16,7 @@ import type { Rosto } from './ator'
 export type Lugar = { modo: 'ator' | 'cheia' | 'metade' | 'atras'; f: number; rosto: Rosto | null }
 /** Um elemento no tempo do vídeo final (o plano Full ator com lettering entra como um, com o tipo do plano). `banco`: no
  *  print sobreposto, a mídia do banco (imagem ou vídeo) que vai no card; sem ela, uma etiqueta com o texto. */
-export type Elemento = { id: string; tipo: string; inicio: number; fim: number; texto: string | null; descricao: string; banco: string | null; largura?: number; y?: number; entrada?: 'seco'; lugar: Lugar }
+export type Elemento = { id: string; tipo: string; inicio: number; fim: number; texto: string | null; descricao: string; banco: string | null; largura?: number; x?: number; y?: number; entrada?: 'seco'; lugar: Lugar }
 
 /** O queixo e os olhos do ator (fração da altura): pela caixa do rosto medido (os olhos como em `ator.enquadrar`); sem
  *  medida, os das referências. */
@@ -115,7 +115,9 @@ function medidasPrint(e: Elemento, item: ItemBanco | undefined) {
   } else h = 0.055 // a etiqueta: uma linha de 2,6 cqh com o respiro
   const { modo, f } = e.lugar
   const meio = e.y !== undefined ? e.y : modo === 'metade' ? f : modo === 'atras' ? Math.min(f, 0.72) - h / 2 - 0.02 : modo === 'ator' ? queixo(e.lugar) + 0.04 + h / 2 : 0.66
-  return { w, h, y: Math.min(Math.max(meio, h / 2 + 0.03), 0.97 - h / 2) }
+  // `x`: o centro do card na horizontal (fração do quadro; padrão, o meio), sem passar da borda
+  const x = e.x !== undefined ? Math.min(Math.max(e.x, w / 2 + 0.02), 0.98 - w / 2) : 0.5
+  return { w, h, x, y: Math.min(Math.max(meio, h / 2 + 0.03), 0.97 - h / 2) }
 }
 
 /** A barra do ManyChat: no ator e na tela toda, a altura medida; na tela dividida, na costura. */
@@ -133,9 +135,9 @@ const pop = (rel: number) => {
   const p = POP.curva(limite01(rel / POP.dur))
   return { escala: POP.escala + (1 - POP.escala) * p, opacidade: p }
 }
-const centrado = (y: number, rel: number) => {
+const centrado = (y: number, rel: number, x = 0.5) => {
   const p = pop(rel)
-  return { left: '50%', top: `${y * 100}%`, transform: `translate(-50%, -50%) scale(${p.escala})`, opacity: p.opacidade }
+  return { left: `${x * 100}%`, top: `${y * 100}%`, transform: `translate(-50%, -50%) scale(${p.escala})`, opacity: p.opacidade }
 }
 
 /** O texto grande do Full ator com lettering (e um lettering sobre o ator): branco, centrado logo abaixo do rosto. */
@@ -262,7 +264,7 @@ function print(e: Elemento, rel: number, banco: Map<string, ItemBanco>): V | nul
       chave: e.id,
       classe: 'absolute overflow-hidden sombra-card',
       // `entrada: 'seco'`: aparece inteiro de uma vez, sem o pop (o som continua)
-      estilo: { ...centrado(m.y, e.entrada === 'seco' ? POP.dur : rel), width: `${m.w * 100}cqw`, height: `${m.h * 100}cqh`, borderRadius: '2.2cqw', background: '#111' },
+      estilo: { ...centrado(m.y, e.entrada === 'seco' ? POP.dur : rel, m.x), width: `${m.w * 100}cqw`, height: `${m.h * 100}cqh`, borderRadius: '2.2cqw', background: '#111' },
       filhos: [midia({ id: e.id, banco: item.id }, banco, Math.max(rel, 0))],
     }
   const texto = e.texto
@@ -271,7 +273,7 @@ function print(e: Elemento, rel: number, banco: Map<string, ItemBanco>): V | nul
     chave: e.id,
     classe: 'absolute',
     estilo: {
-      ...centrado(m.y, rel),
+      ...centrado(m.y, rel, m.x),
       padding: '1.2cqh 3.2cqw',
       borderRadius: '1.8cqw',
       background: 'rgba(14,14,14,0.62)',
