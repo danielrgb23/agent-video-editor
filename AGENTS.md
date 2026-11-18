@@ -36,7 +36,7 @@ Referência: `../18-harness-video-editor` (o app web anterior). Só leitura: cop
   junte-os por área, mostre ao criador e grave só o que ele confirmar.
 - **Não declare aprovado** o que o criador não aprovou.
 - Os originais em `projetos/*/midia/` nunca são alterados.
-- Chaves (OpenRouter, ElevenLabs) só no `.env` da raiz. Nunca mostre, registre ou faça commit delas.
+- Chaves (Gemini, ElevenLabs) só no `.env` da raiz. Nunca mostre, registre ou faça commit delas.
 - Caminhos com espaços: use aspas. Docs de bibliotecas: Context7.
 
 ## Git

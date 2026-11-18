@@ -92,7 +92,7 @@ VERSAO_ANALISE = 11  # muda quando o prompt ou o que é enviado muda (os trechos
 # da chave do cache do 18 (config do app dele): só o formato "video" foi portado
 FPS, FORMATO, GRADE = 2, 'video', '3x2'
 
-SEM_CREDITO = 'Sem crédito no OpenRouter. Adicione créditos e clique em “Tentar de novo” (o que já foi analisado é reaproveitado).'
+SEM_CREDITO = 'Sem crédito (cota) no Gemini. Veja o plano da chave e clique em “Tentar de novo” (o que já foi analisado é reaproveitado).'
 INTERROMPIDA = 'A análise foi interrompida. Clique em “Tentar de novo” (o que já foi analisado é reaproveitado).'
 
 
@@ -1220,7 +1220,7 @@ def analisar_trecho(video: Path, palavras: list[dict], n: int, a: float, b: floa
             f'VÍDEO DO TRECHO (com áudio): o tempo 0 deste vídeo é {a:.2f} s do vídeo inteiro, e ele termina em {b:.2f} s. '
             f'Responda os tempos em segundos do vídeo inteiro (some {a:.2f}).')},
             gemini.bloco(_clipe(video, a, b, tmp / 'trecho.mp4'), tmp, preparado=True)]
-        # saída limitada (o OpenRouter reserva crédito pelo máximo) e timeout curto: uma chamada travada não prende a fila
+        # saída limitada e timeout curto: uma chamada travada não prende a fila
         try:
             r, uso = _perguntar(_sistema(PROMPT), conteudo, ESQUEMA_TRECHO, 4096, 90)
         except RuntimeError as e:
@@ -1248,7 +1248,7 @@ def _em_paralelo(fazer, lista: list, n: int) -> list:
 
 
 def _analise(id: str, base: Path):
-    modelo = env('OPENROUTER_MODEL')
+    modelo = env('GEMINI_MODEL')
     dur = ler(id)['video']['duracao']
     cortes = ler_json(base / 'cenas.json')['cortes']
     palavras = ler_json(base / 'palavras.json')['palavras']
@@ -1530,7 +1530,7 @@ def main() -> None:
     else:
         if not a.video:
             ap.error('diga o vídeo (ou --id)')
-        env('OPENROUTER_API_KEY')  # sem as chaves, nem começa
+        env('GEMINI_API_KEY')  # sem as chaves, nem começa
         env('ELEVENLABS_API_KEY')
         try:
             id = _criar(a.video, a.nome, a.categoria)
