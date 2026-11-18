@@ -7,3 +7,20 @@ node_modules/
 /biblioteca/
 /projetos/
 /carrosseis/
+/reels/
+
+# mídia (imagens, vídeo, áudio) e o que as edições geram: nunca no git
+*.png
+*.PNG
+*.jpg
+*.JPG
+*.jpeg
+*.JPEG
+*.mp4
+*.MP4
+*.mov
+*.MOV
+*.webm
+*.wav
+*.mp3
+*.m4a
